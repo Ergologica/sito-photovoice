@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A scuola di giustizia riparativa — Galleria</title>
+<meta name="description" content="Photovoice — A scuola di giustizia riparativa. Galleria fotografica del percorso: laboratori, la mostra a Spazio Faber e gli incontri con Tim Chapman.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<!-- QR generator (usato solo per l'overlay QR in pagina; degrada a testo se offline) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: #0d0d0d; }
+  body { font-family: 'Cormorant Garamond', Georgia, serif; -webkit-tap-highlight-color: transparent; }
+
+  #stage { position: fixed; inset: 0; background: #0d0d0d; overflow: hidden; user-select: none; touch-action: pan-y; }
+
+  .slide {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    opacity: 0; transform: scale(1.022); z-index: 1; pointer-events: none;
+    transition: opacity 0.72s cubic-bezier(0.4,0,0.2,1), transform 0.72s cubic-bezier(0.4,0,0.2,1);
+  }
+  .slide.active { opacity: 1; transform: scale(1); z-index: 2; pointer-events: auto; }
+  .slide img { max-width: 100%; max-height: 100vh; width: auto; height: auto; object-fit: contain; display: block; }
+
+  /* loader */
+  #loader { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: #0d0d0d; z-index: 50; color: rgba(255,255,255,0.5); font-size: 17px; letter-spacing: .12em; }
+  #loader.hide { opacity: 0; pointer-events: none; transition: opacity .5s ease; }
+
+  /* nav buttons */
+  .nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 30;
+    width: 46px; height: 46px; border-radius: 50%;
+    background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.22);
+    color: #fff; font-size: 28px; cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    transition: background 0.2s ease; line-height: 1; }
+  .nav:hover { background: rgba(255,255,255,0.26); }
+  #prev { left: 14px; } #next { right: 14px; }
+
+  /* counter */
+  #counter { position: absolute; top: 18px; right: 18px; z-index: 30; pointer-events: none;
+    font-size: 15px; letter-spacing: 0.16em; color: rgba(255,255,255,0.42); }
+
+  /* wordmark */
+  #wordmark { position: absolute; top: 16px; left: 20px; z-index: 30; pointer-events: none;
+    font-size: 17px; letter-spacing: 0.06em; color: rgba(255,255,255,0.5);
+    text-transform: uppercase; font-weight: 600; }
+
+  /* section caption */
+  #caption { position: absolute; left: 20px; bottom: 46px; z-index: 30; pointer-events: none;
+    font-style: italic; font-size: 19px; color: rgba(255,255,255,0.62);
+    text-shadow: 0 1px 8px rgba(0,0,0,0.5); transition: opacity .4s ease; }
+
+  /* progress bar */
+  #progress { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+    z-index: 30; width: min(46vw, 360px); height: 6px; border-radius: 3px;
+    background: rgba(255,255,255,0.18); cursor: pointer; }
+  #progress-fill { height: 100%; border-radius: 3px; background: var(--accent, #fff);
+    width: 0%; transition: width 0.35s cubic-bezier(0.4,0,0.2,1); }
+
+  /* toolbar (autoplay + qr) */
+  #toolbar { position: absolute; bottom: 18px; right: 18px; z-index: 30; display: flex; gap: 10px; }
+  .tool { width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.22);
+    color: #fff; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); transition: background 0.2s ease; }
+  .tool:hover { background: rgba(255,255,255,0.26); }
+  .tool svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* QR overlay */
+  #qr-backdrop { position: fixed; inset: 0; z-index: 60; display: none;
+    align-items: center; justify-content: center; background: rgba(0,0,0,0.72);
+    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); animation: backdropIn .3s ease; }
+  #qr-backdrop.show { display: flex; }
+  #qr-card { background: #f9f8f5; border-radius: 18px; padding: 26px 26px 20px;
+    text-align: center; animation: qrIn .35s cubic-bezier(0.4,0,0.2,1); max-width: 86vw; }
+  #qr-code-div { width: 196px; height: 196px; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; }
+  #qr-card .label { font-size: 19px; color: #1c1c1a; letter-spacing: .04em; }
+  #qr-card .hint { font-size: 14px; color: #8a857c; margin-top: 4px; font-style: italic; }
+  @keyframes qrIn { from { opacity: 0; transform: scale(0.94) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  @keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
+
+  @media (max-width: 600px) {
+    #wordmark { font-size: 13px; } #caption { font-size: 16px; bottom: 42px; }
+    .nav { width: 40px; height: 40px; font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div id="loader">Caricamento…</div>
+
+<div id="stage" aria-label="Galleria fotografica">
+  <div id="wordmark">A scuola di giustizia riparativa</div>
+  <div id="counter">— / —</div>
+  <div id="caption"></div>
+
+  <button id="prev" class="nav" aria-label="Immagine precedente">‹</button>
+  <button id="next" class="nav" aria-label="Immagine successiva">›</button>
+
+  <div id="progress" aria-label="Avanzamento"><div id="progress-fill"></div></div>
+
+  <div id="toolbar">
+    <button id="btn-auto" class="tool" aria-label="Avvia/ferma riproduzione automatica" title="Riproduzione automatica">
+      <svg id="ic-play" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4" fill="#fff" stroke="none"></polygon></svg>
+      <svg id="ic-pause" viewBox="0 0 24 24" style="display:none"><line x1="8" y1="5" x2="8" y2="19"></line><line x1="16" y1="5" x2="16" y2="19"></line></svg>
+    </button>
+    <button id="btn-qr" class="tool" aria-label="Mostra codice QR" title="Codice QR di questa pagina">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><line x1="14" y1="14" x2="14" y2="17"></line><line x1="17" y1="14" x2="21" y2="14"></line><line x1="21" y1="17" x2="21" y2="21"></line><line x1="14" y1="21" x2="17" y2="21"></line></svg>
+    </button>
+  </div>
+</div>
+
+<div id="qr-backdrop">
+  <div id="qr-card">
+    <div id="qr-code-div"></div>
+    <div class="label">Inquadra per aprire la galleria</div>
+    <div class="hint">tocca fuori per chiudere</div>
+  </div>
+</div>
+
+<script src="manifest.js"></script>
+<script>
+(function () {
+  "use strict";
+  var ACCENT = "#ffffff";
+  document.documentElement.style.setProperty("--accent", ACCENT);
+
+  var SLIDES = (window.SLIDES || []);
+  var stage = document.getElementById("stage");
+  var loader = document.getElementById("loader");
+  var counter = document.getElementById("counter");
+  var caption = document.getElementById("caption");
+  var fill = document.getElementById("progress-fill");
+  var progress = document.getElementById("progress");
+
+  if (!SLIDES.length) { loader.textContent = "Nessuna immagine trovata."; return; }
+
+  // build slide nodes (lazy: src assigned on demand)
+  var nodes = SLIDES.map(function (s) {
+    var d = document.createElement("div");
+    d.className = "slide";
+    var img = document.createElement("img");
+    img.alt = s.section || "";
+    img.dataset.src = s.src;
+    img.loading = "lazy";
+    img.decoding = "async";
+    d.appendChild(img);
+    stage.appendChild(d);
+    return d;
+  });
+
+  var total = SLIDES.length;
+  var current = 0;
+  var autoTimer = null;
+  var INTERVAL = 5000;
+
+  function ensureLoaded(i) {
+    if (i < 0 || i >= total) return;
+    var img = nodes[i].firstChild;
+    if (!img.src && img.dataset.src) img.src = img.dataset.src;
+  }
+
+  function render() {
+    for (var i = 0; i < total; i++) {
+      nodes[i].classList.toggle("active", i === current);
+    }
+    // preload current + neighbours
+    ensureLoaded(current);
+    ensureLoaded(current + 1);
+    ensureLoaded(current - 1);
+    ensureLoaded((current + 1) % total);
+    ensureLoaded((current - 1 + total) % total);
+
+    counter.textContent = (current + 1) + " / " + total;
+    fill.style.width = ((current + 1) / total * 100) + "%";
+    var sec = SLIDES[current].section || "";
+    caption.textContent = sec;
+  }
+
+  function go(n) {
+    current = ((n % total) + total) % total;
+    render();
+  }
+
+  // controls
+  document.getElementById("prev").addEventListener("click", function () { go(current - 1); });
+  document.getElementById("next").addEventListener("click", function () { go(current + 1); });
+
+  // keyboard
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowLeft") go(current - 1);
+    else if (e.key === "ArrowRight") go(current + 1);
+    else if (e.key === " ") { e.preventDefault(); toggleAuto(); }
+    else if (e.key === "Escape") closeQR();
+  });
+
+  // touch swipe
+  var tx = 0, ty = 0;
+  stage.addEventListener("touchstart", function (e) {
+    tx = e.touches[0].clientX; ty = e.touches[0].clientY;
+  }, { passive: true });
+  stage.addEventListener("touchend", function (e) {
+    var dx = e.changedTouches[0].clientX - tx;
+    var dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      go(dx < 0 ? current + 1 : current - 1);
+    }
+  }, { passive: true });
+
+  // seek via progress bar
+  progress.addEventListener("click", function (e) {
+    var r = progress.getBoundingClientRect();
+    var p = (e.clientX - r.left) / r.width;
+    go(Math.round(p * (total - 1)));
+  });
+
+  // autoplay
+  var icPlay = document.getElementById("ic-play");
+  var icPause = document.getElementById("ic-pause");
+  function startAuto() {
+    stopAuto();
+    autoTimer = setInterval(function () { go(current + 1); }, INTERVAL);
+    icPlay.style.display = "none"; icPause.style.display = "";
+  }
+  function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    icPlay.style.display = ""; icPause.style.display = "none";
+  }
+  function toggleAuto() { autoTimer ? stopAuto() : startAuto(); }
+  document.getElementById("btn-auto").addEventListener("click", toggleAuto);
+
+  // QR overlay
+  var qrBackdrop = document.getElementById("qr-backdrop");
+  var qrDiv = document.getElementById("qr-code-div");
+  var qrBuilt = false;
+  function openQR() {
+    qrBackdrop.classList.add("show");
+    if (!qrBuilt) {
+      var url = window.location.href;
+      if (typeof QRCode !== "undefined") {
+        try {
+          new QRCode(qrDiv, { text: url, width: 196, height: 196,
+            colorDark: "#1c1c1a", colorLight: "#f9f8f5", correctLevel: QRCode.CorrectLevel.M });
+          qrBuilt = true;
+        } catch (err) { qrDiv.textContent = url; qrDiv.style.cssText += "font-size:9px;word-break:break-all;color:#666;padding:8px;"; }
+      } else {
+        qrDiv.textContent = url;
+        qrDiv.style.cssText += "font-size:9px;word-break:break-all;color:#666;padding:8px;";
+      }
+    }
+  }
+  function closeQR() { qrBackdrop.classList.remove("show"); }
+  document.getElementById("btn-qr").addEventListener("click", openQR);
+  qrBackdrop.addEventListener("click", function (e) { if (e.target === qrBackdrop) closeQR(); });
+
+  // first image: hide loader once it decodes
+  var first = nodes[0].firstChild;
+  ensureLoaded(0);
+  function reveal() { loader.classList.add("hide"); setTimeout(function(){ loader.style.display = "none"; }, 520); }
+  if (first.complete) reveal();
+  else { first.addEventListener("load", reveal); first.addEventListener("error", reveal); }
+  setTimeout(reveal, 3000); // fallback
+
+  render();
+})();
+</script>
+</body>
+</html>
